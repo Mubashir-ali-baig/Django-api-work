@@ -8,6 +8,12 @@ from django.contrib.auth import authenticate,login
 from django.views.generic import View
 from .models import Album
 from .forms import UserForm
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework import status
+from django.http import Http404
+from django.core.exceptions import ObjectDoesNotExist
+from .serializers import AlbumSerializer
 class IndexView(generic.ListView):
     template_name = 'music/index.html'
 
@@ -60,3 +66,15 @@ class UserFormView(View):
                     login(request,user)
                     return redirect('music:index')
         return render(request,self.template_name,{'form':form})
+class AlbumList(APIView):
+    def get(self,request):
+        albums=Album.objects.all()
+        serializer = AlbumSerializer(albums,many=True)
+        return Response(serializer.data)
+    def post(self,request):
+        serializer=AlbumSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data,status=status.HTTP_201_CREATED)
+        return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
+
